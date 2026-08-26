@@ -1,8 +1,8 @@
 /*
  * ============================================================
- * ULTIMATE FRIDA BYPASS SCRIPT v3.2
- * Complete Talsec Demo App Bypass
- * Fixed all overload errors and added comprehensive error handling
+ * ULTIMATE FRIDA BYPASS SCRIPT v4.3+
+ * Complete Talsec / freeRASP / FreeRASP KMP / Flutter Bypass
+ * Syscall-level hooks + early exit blockers + full coverage
  * ============================================================
  */
 
@@ -26,8 +26,8 @@ console.log("║   ██╔══╝  ██╔══██╗██║██�
 console.log("║   ██║     ██║  ██║██║██████╔╝██║  ██║                        ║");
 console.log("║   ╚═╝     ╚═╝  ╚═╝╚═╝╚═════╝ ╚═╝  ╚═╝                        ║");
 console.log("║                                                              ║");
-console.log("║   Ultimate Frida Bypass Script v3.2                          ║");
-console.log("║   Talsec Demo App Complete Bypass                           ║");
+console.log("║   Ultimate Frida Bypass Script v4.3+                        ║");
+console.log("║   Talsec / freeRASP / FreeRASP KMP / Flutter Complete Bypass║");
 console.log("║   https://ishanoshada.com | @ishanoshada                    ║");
 console.log("║                                                              ║");
 console.log("╚══════════════════════════════════════════════════════════════╝");
@@ -42,10 +42,8 @@ function safeHook(obj, methodName, overloads, implementation) {
             console.log("[DEBUG] Method not found: " + methodName);
             return false;
         }
-        
         var method = obj[methodName];
         var hooked = false;
-        
         if (overloads && Array.isArray(overloads)) {
             for (var i = 0; i < overloads.length; i++) {
                 try {
@@ -57,7 +55,6 @@ function safeHook(obj, methodName, overloads, implementation) {
                 } catch(e) {}
             }
         }
-        
         if (!hooked) {
             try {
                 if (method.overloads) {
@@ -75,7 +72,6 @@ function safeHook(obj, methodName, overloads, implementation) {
                 }
             } catch(e) {}
         }
-        
         return hooked;
     } catch(e) {
         console.log("[DEBUG] Failed to hook " + methodName + ": " + e);
@@ -101,53 +97,95 @@ function safeSpoofProperty(obj, propName, value) {
 // ============================================================
 Java.perform(function() {
     console.log("[ULTIMATE-BYPASS] ========================================");
-    console.log("[ULTIMATE-BYPASS] Starting Ultimate Combined Bypass Script");
-    console.log("[ULTIMATE-BYPASS] Version: 3.2 - Talsec Demo App Bypass");
+    console.log("[ULTIMATE-BYPASS] Starting Ultimate Combined Bypass Script v4.3+");
     console.log("[ULTIMATE-BYPASS] ========================================");
-    
+
+    // ============================================================
+    // EARLY EXIT BLOCKERS (must be first)
+    // ============================================================
+    try {
+        var System = Java.use("java.lang.System");
+        System.exit.implementation = function(code) {
+            console.log("[BYPASS-EXIT] System.exit(" + code + ") blocked");
+            return;
+        };
+
+        var Runtime = Java.use("java.lang.Runtime");
+        Runtime.exit.implementation = function(code) {
+            console.log("[BYPASS-EXIT] Runtime.exit(" + code + ") blocked");
+            return;
+        };
+        Runtime.halt.implementation = function(code) {
+            console.log("[BYPASS-EXIT] Runtime.halt(" + code + ") blocked");
+            return;
+        };
+
+        var Process = Java.use("android.os.Process");
+        Process.killProcess.implementation = function(pid) {
+            console.log("[BYPASS-EXIT] Process.killProcess(" + pid + ") blocked");
+            return;
+        };
+
+        var Activity = Java.use("android.app.Activity");
+        Activity.finish.implementation = function() {
+            console.log("[BYPASS-EXIT] Activity.finish() blocked");
+            return;
+        };
+        Activity.finishAffinity.implementation = function() {
+            console.log("[BYPASS-EXIT] Activity.finishAffinity() blocked");
+            return;
+        };
+        console.log("[ULTIMATE-BYPASS] ✓ Exit blockers active");
+    } catch(e) {
+        console.log("[ERROR] Exit blockers failed: " + e);
+    }
+
     // ============================================================
     // PART 0: CUSTOM PORT DETECTION BYPASS
     // ============================================================
     try {
         var ServerSocket = Java.use("java.net.ServerSocket");
         var Socket = Java.use("java.net.Socket");
+        var SocketChannel = Java.use("java.nio.channels.SocketChannel");
+        var ServerSocketChannel = Java.use("java.nio.channels.ServerSocketChannel");
         var ByteArrayOutputStream = Java.use("java.io.ByteArrayOutputStream");
         var ObjectOutputStream = Java.use("java.io.ObjectOutputStream");
-        
+
         var fridaPorts = [27042, 27043, 27044, 27045, 27046, 27047, 27048, 27049, 27050];
-        
+
         safeHook(ServerSocket, "$init", [['int']], function(port) {
             if (fridaPorts.indexOf(port) !== -1) {
-                console.log("[BYPASS-PORT] ServerSocket(" + port + ") intercepted");
+                console.log("[BYPASS-PORT] ServerSocket(" + port + ") intercepted -> binding to port 0");
                 return this.$init(0);
             }
             return this.$init(port);
         });
-        
+
         safeHook(ServerSocket, "$init", [['int', 'int']], function(port, backlog) {
             if (fridaPorts.indexOf(port) !== -1) {
-                console.log("[BYPASS-PORT] ServerSocket(" + port + ", " + backlog + ") intercepted");
+                console.log("[BYPASS-PORT] ServerSocket(" + port + ", " + backlog + ") intercepted -> binding to port 0");
                 return this.$init(0, backlog);
             }
             return this.$init(port, backlog);
         });
-        
+
+        // Use a dummy port (12345) instead of 0 to avoid IllegalArgumentException
         safeHook(Socket, "$init", [['java.lang.String', 'int']], function(host, port) {
             if (fridaPorts.indexOf(port) !== -1) {
-                console.log("[BYPASS-PORT] Socket(" + host + ", " + port + ") intercepted");
-                return this.$init("127.0.0.1", 0);
+                console.log("[BYPASS-PORT] Socket(" + host + ", " + port + ") intercepted -> redirecting to dummy port");
+                return this.$init(host, 12345);
             }
             return this.$init(host, port);
         });
-        
+
         safeHook(Socket, "$init", [['java.net.InetAddress', 'int']], function(address, port) {
             if (fridaPorts.indexOf(port) !== -1) {
-                console.log("[BYPASS-PORT] Socket(InetAddress, " + port + ") intercepted");
-                return this.$init(address, 0);
+                console.log("[BYPASS-PORT] Socket(InetAddress, " + port + ") intercepted -> redirecting to dummy port");
+                return this.$init(address, 12345);
             }
             return this.$init(address, port);
         });
-        
+
         safeHook(Socket, "connect", [['java.net.SocketAddress']], function(endpoint) {
             var port = -1;
             if (endpoint && endpoint.toString) {
@@ -161,7 +199,16 @@ Java.perform(function() {
             }
             return this.connect(endpoint);
         });
-        
+
+        safeHook(SocketChannel, "open", [], function() {
+            console.log("[BYPASS-PORT] SocketChannel.open() intercepted");
+            return this.open();
+        });
+        safeHook(ServerSocketChannel, "open", [], function() {
+            console.log("[BYPASS-PORT] ServerSocketChannel.open() intercepted");
+            return this.open();
+        });
+
         safeHook(ObjectOutputStream, "$init", [['java.io.OutputStream']], function(out) {
             try {
                 var stack = Java.use("java.lang.Thread").currentThread().getStackTrace();
@@ -183,7 +230,7 @@ Java.perform(function() {
                 return this.$init(out);
             }
         });
-        
+
         try {
             var ThreatListener = Java.use("com.aheaditec.talsec_security.security.api.ThreatListener");
             if (ThreatListener && ThreatListener.V) {
@@ -193,14 +240,14 @@ Java.perform(function() {
                 };
             }
         } catch(e) {}
-        
+
         console.log("[ULTIMATE-BYPASS] ✓ Custom port detection bypass active");
     } catch(e) {
         console.log("[ERROR] Port detection hook failed: " + e);
     }
-    
+
     // ============================================================
-    // PART 1: NETSTAT COMMAND BYPASS
+    // PART 1: NETSTAT COMMAND BYPASS / COMMAND OUTPUT FILTERING
     // ============================================================
     try {
         var Runtime = Java.use("java.lang.Runtime");
@@ -208,12 +255,12 @@ Java.perform(function() {
         var ByteArrayInputStream = Java.use("java.io.ByteArrayInputStream");
         var ByteArrayOutputStream = Java.use("java.io.ByteArrayOutputStream");
         var Process = Java.use("java.lang.Process");
-        
+
         safeHook(BufferedReader, "readLine", [], function() {
             var line = this.readLine();
             if (line) {
-                var fridaPatterns = ["27042", "27043", "27044", "27045", 
-                                    "frida", "gmain", "gdbus", "gum-js", 
+                var fridaPatterns = ["27042", "27043", "27044", "27045",
+                                    "frida", "gmain", "gdbus", "gum-js",
                                     "linjector", "pool-frida"];
                 for (var i = 0; i < fridaPatterns.length; i++) {
                     if (line.indexOf(fridaPatterns[i]) !== -1) {
@@ -228,19 +275,19 @@ Java.perform(function() {
             }
             return line;
         });
-        
+
         console.log("[ULTIMATE-BYPASS] ✓ Netstat and process detection bypass active");
     } catch(e) {
         console.log("[ERROR] Netstat hook failed: " + e);
     }
-    
+
     // ============================================================
     // PART 2: DEVELOPER MODE BYPASS
     // ============================================================
     try {
         var Settings = Java.use("android.provider.Settings$Global");
         var Secure = Java.use("android.provider.Settings$Secure");
-        
+
         safeHook(Secure, "getInt", [['android.content.ContentResolver', 'java.lang.String']], function(resolver, name) {
             if (name === "development_settings_enabled") {
                 console.log("[BYPASS-DEV] Developer mode -> 0");
@@ -248,7 +295,7 @@ Java.perform(function() {
             }
             return this.getInt(resolver, name);
         });
-        
+
         safeHook(Settings, "getInt", [['android.content.ContentResolver', 'java.lang.String']], function(resolver, name) {
             if (name === "development_settings_enabled") {
                 console.log("[BYPASS-DEV] Global developer mode -> 0");
@@ -256,7 +303,7 @@ Java.perform(function() {
             }
             return this.getInt(resolver, name);
         });
-        
+
         safeHook(Settings, "getString", [['android.content.ContentResolver', 'java.lang.String']], function(resolver, name) {
             if (name === "adb_enabled") {
                 console.log("[BYPASS-ADB] ADB enabled -> 0");
@@ -268,12 +315,12 @@ Java.perform(function() {
             }
             return this.getString(resolver, name);
         });
-        
+
         console.log("[ULTIMATE-BYPASS] ✓ Developer mode bypass active");
     } catch(e) {
         console.log("[ERROR] Developer mode hook failed: " + e);
     }
-    
+
     // ============================================================
     // PART 3: EMULATOR DETECTION BYPASS
     // ============================================================
@@ -281,7 +328,7 @@ Java.perform(function() {
         var Build = Java.use("android.os.Build");
         var TelephonyManager = Java.use('android.telephony.TelephonyManager');
         var SystemProperties = Java.use("android.os.SystemProperties");
-        
+
         var spoofedBuild = {
             BRAND: "samsung",
             DEVICE: "beyond1",
@@ -299,13 +346,13 @@ Java.perform(function() {
             HOST: "build-host",
             SERIAL: "R3CN8JTMV3K"
         };
-        
+
         Object.keys(spoofedBuild).forEach(function(key) {
             if (safeSpoofProperty(Build, key, spoofedBuild[key])) {
                 console.log("[BYPASS-EMU] Build." + key + " spoofed");
             }
         });
-        
+
         safeHook(TelephonyManager, "getNetworkOperatorName", [], function() {
             return "T-Mobile";
         });
@@ -324,7 +371,7 @@ Java.perform(function() {
         safeHook(TelephonyManager, "getSimSerialNumber", [], function() {
             return "1234567890123456789";
         });
-        
+
         safeHook(SystemProperties, "get", [['java.lang.String']], function(key) {
             var hiddenProps = {
                 "ro.debuggable": "0",
@@ -341,34 +388,34 @@ Java.perform(function() {
             }
             return this.get(key);
         });
-        
+
         console.log("[ULTIMATE-BYPASS] ✓ Emulator detection bypass active");
     } catch(e) {
         console.log("[ERROR] Emulator hook failed: " + e);
     }
-    
+
     // ============================================================
     // PART 4: DEBUGGER DETECTION BYPASS
     // ============================================================
     try {
         var Debug = Java.use("android.os.Debug");
         var Process = Java.use("android.os.Process");
-        
+
         safeHook(Debug, "isDebuggerConnected", [], function() {
             console.log("[BYPASS-DEBUG] isDebuggerConnected -> false");
             return false;
         });
-        
+
         safeHook(Debug, "waitingForDebugger", [], function() {
             console.log("[BYPASS-DEBUG] waitingForDebugger -> false");
             return false;
         });
-        
+
         safeHook(Process, "isDebuggerConnected", [], function() {
             console.log("[BYPASS-DEBUG] Process.isDebuggerConnected -> false");
             return false;
         });
-        
+
         try {
             var VMDebug = Java.use("dalvik.system.VMDebug");
             safeHook(VMDebug, "isDebuggerConnected", [], function() {
@@ -376,18 +423,18 @@ Java.perform(function() {
                 return false;
             });
         } catch(e) {}
-        
+
         console.log("[ULTIMATE-BYPASS] ✓ Debugger detection bypass active");
     } catch(e) {
         console.log("[ERROR] Debugger hook failed: " + e);
     }
-    
+
     // ============================================================
     // PART 5: FILE DETECTION BYPASS
     // ============================================================
     try {
         var File = Java.use("java.io.File");
-        
+
         var blockedFiles = [
             "/data/local/tmp/frida-server",
             "/data/local/tmp/frida",
@@ -401,7 +448,7 @@ Java.perform(function() {
             "/su/bin/su", "/vendor/bin/su", "/odm/bin/su",
             "/data/local/tmp/magisk", "/sbin/magisk"
         ];
-        
+
         safeHook(File, "exists", [], function() {
             var path = this.getAbsolutePath();
             if (path) {
@@ -414,30 +461,29 @@ Java.perform(function() {
             }
             return this.exists();
         });
-        
+
         console.log("[ULTIMATE-BYPASS] ✓ File detection bypass active");
     } catch(e) {
         console.log("[ERROR] File hook failed: " + e);
     }
-    
+
     // ============================================================
-    // PART 6: COMPLETE TALSEC DEMO APP BYPASS
+    // PART 6: COMPLETE TALSEC / freeRASP / KMP / FLUTTER BYPASS
     // ============================================================
     try {
         // 6.1: Hook ThreatListener (main class)
         try {
             var ThreatListener = Java.use("com.aheaditec.talsec_security.security.api.ThreatListener");
             console.log("[TALSEC] Found ThreatListener");
-            
+
             // 6.2: Hook ThreatDetected - All callback methods
             try {
                 var ThreatDetected = Java.use("com.aheaditec.talsec_security.security.api.ThreatListener$ThreatDetected");
                 console.log("[TALSEC] Found ThreatDetected");
-                
-                // All threat detection callbacks from the demo app
+
                 var threatMethods = [
                     "onRootDetected",
-                    "onDebuggerDetected", 
+                    "onDebuggerDetected",
                     "onEmulatorDetected",
                     "onTamperDetected",
                     "onUntrustedInstallationSourceDetected",
@@ -453,11 +499,10 @@ Java.perform(function() {
                     "onTimeSpoofingDetected",
                     "onLocationSpoofingDetected"
                 ];
-                
+
                 threatMethods.forEach(function(method) {
                     try {
                         if (ThreatDetected[method]) {
-                            // For methods with parameters (like onMalwareDetected)
                             if (method === "onMalwareDetected") {
                                 ThreatDetected[method].overload('java.util.List').implementation = function(suspiciousApps) {
                                     console.log("[TALSEC] Blocked: " + method + "() - " + suspiciousApps);
@@ -478,12 +523,12 @@ Java.perform(function() {
             } catch(e) {
                 console.log("[TALSEC] ThreatDetected not found: " + e);
             }
-            
-            // 6.3: Hook DeviceState - All callback methods
+
+            // 6.3: Hook DeviceState
             try {
                 var DeviceState = Java.use("com.aheaditec.talsec_security.security.api.ThreatListener$DeviceState");
                 console.log("[TALSEC] Found DeviceState");
-                
+
                 var deviceStateMethods = [
                     "onUnlockedDeviceDetected",
                     "onHardwareBackedKeystoreNotAvailableDetected",
@@ -491,7 +536,7 @@ Java.perform(function() {
                     "onADBEnabledDetected",
                     "onSystemVPNDetected"
                 ];
-                
+
                 deviceStateMethods.forEach(function(method) {
                     try {
                         if (DeviceState[method]) {
@@ -508,12 +553,12 @@ Java.perform(function() {
             } catch(e) {
                 console.log("[TALSEC] DeviceState not found: " + e);
             }
-            
+
             // 6.4: Hook RaspExecutionState
             try {
                 var RaspExecutionState = Java.use("com.aheaditec.talsec_security.security.api.ThreatListener$RaspExecutionState");
                 console.log("[TALSEC] Found RaspExecutionState");
-                
+
                 if (RaspExecutionState.onAllChecksFinished) {
                     RaspExecutionState.onAllChecksFinished.implementation = function() {
                         console.log("[TALSEC] Blocked: onAllChecksFinished()");
@@ -524,12 +569,12 @@ Java.perform(function() {
             } catch(e) {
                 console.log("[TALSEC] RaspExecutionState not found: " + e);
             }
-            
+
             // 6.5: Hook BiometricState
             try {
                 var BiometricState = Java.use("com.aheaditec.talsec_security.security.api.ThreatListener$BiometricState");
                 console.log("[TALSEC] Found BiometricState");
-                
+
                 if (BiometricState && BiometricState.ACTIVE) {
                     BiometricState.valueOf.implementation = function(name) {
                         console.log("[TALSEC] BiometricState.valueOf() -> ACTIVE");
@@ -540,21 +585,21 @@ Java.perform(function() {
             } catch(e) {
                 console.log("[TALSEC] BiometricState not found: " + e);
             }
-            
+
             // 6.6: Hook ThreatListener.registerListener
             safeHook(ThreatListener, "registerListener", [['android.content.Context']], function(context) {
                 console.log("[TALSEC] registerListener intercepted - Preventing registration");
                 return;
             });
             console.log("[TALSEC] ✓ registerListener hooked");
-            
+
             // 6.7: Hook ThreatListener.onReceive
             safeHook(ThreatListener, "onReceive", [['android.content.Context', 'android.content.Intent']], function(context, intent) {
                 console.log("[TALSEC] onReceive intercepted - Preventing all callbacks");
                 return;
             });
             console.log("[TALSEC] ✓ onReceive hooked");
-            
+
             // 6.8: Hook ThreatListener.getBiometricState
             safeHook(ThreatListener, "getBiometricState", [['android.content.Context']], function(context) {
                 console.log("[TALSEC] getBiometricState -> ACTIVE");
@@ -562,12 +607,11 @@ Java.perform(function() {
                 return BiometricState.ACTIVE.value;
             });
             console.log("[TALSEC] ✓ getBiometricState hooked");
-            
+
             // 6.9: Hook ThreatListener constructor
             try {
                 ThreatListener.$init.overload('com.aheaditec.talsec_security.security.api.ThreatListener$ThreatDetected').implementation = function(threatDetected) {
                     console.log("[TALSEC] ThreatListener constructor intercepted");
-                    // Create dummy ThreatDetected
                     var DummyThreatDetected = Java.registerClass({
                         name: "com.aheaditec.talsec_security.security.api.DummyThreatDetected",
                         implements: [Java.use("com.aheaditec.talsec_security.security.api.ThreatListener$ThreatDetected")],
@@ -597,12 +641,12 @@ Java.perform(function() {
             } catch(e) {
                 console.log("[TALSEC] Could not hook constructor: " + e);
             }
-            
+
         } catch(e) {
             console.log("[TALSEC] ThreatListener not found: " + e);
         }
-        
-        // 6.10: Hook L0.X class (used for biometric checks)
+
+        // 6.10: Hook L0.X class (biometric checks)
         try {
             var X = Java.use("L0.X");
             safeHook(X, "i", [], function() {
@@ -613,38 +657,29 @@ Java.perform(function() {
         } catch(e) {
             console.log("[TALSEC] X class not found: " + e);
         }
-        
-        // 6.11: Hook Talsec.start
+
+        // 6.11: Hook Talsec.start (all overloads) - CORRECT CLASS
         try {
-            var Talsec = Java.use("com.talsec.freerasp.Talsec");
-            console.log("[TALSEC] Found Talsec class");
-            
-            try {
-                Talsec.start.overload('android.content.Context', 'com.aheaditec.talsec_security.security.api.TalsecConfig').implementation = function(context, config) {
-                    console.log("[TALSEC] Talsec.start() intercepted - Bypassing start");
-                    console.log("[TALSEC] Config: " + config);
+            var Talsec = Java.use("com.aheaditec.talsec_security.security.api.Talsec");
+            console.log("[TALSEC] Found Talsec class (correct)");
+
+            var startOverloads = Talsec.start.overloads;
+            startOverloads.forEach(function(ov) {
+                ov.implementation = function() {
+                    console.log("[TALSEC] Talsec.start() intercepted - skipping");
                     return;
                 };
-                console.log("[TALSEC] ✓ Talsec.start hooked");
-            } catch(e) {}
-            
-            try {
-                Talsec.start.overload('android.app.Application', 'com.aheaditec.talsec_security.security.api.TalsecConfig').implementation = function(app, config) {
-                    console.log("[TALSEC] Talsec.start(Application) intercepted - Bypassing start");
-                    return;
-                };
-                console.log("[TALSEC] ✓ Talsec.start(Application) hooked");
-            } catch(e) {}
+            });
+            console.log("[TALSEC] ✓ Talsec.start hooked");
         } catch(e) {
             console.log("[TALSEC] Talsec class not found: " + e);
         }
-        
-        // 6.12: Hook TalsecConfig.Builder
+
+        // 6.12: Hook TalsecConfig.Builder (killOnBypass)
         try {
             var TalsecConfig = Java.use("com.aheaditec.talsec_security.security.api.TalsecConfig");
             var Builder = Java.use("com.aheaditec.talsec_security.security.api.TalsecConfig$Builder");
-            
-            // Hook builder methods to disable killOnBypass
+
             if (Builder.killOnBypass) {
                 Builder.killOnBypass.implementation = function(enable) {
                     console.log("[TALSEC] killOnBypass(" + enable + ") intercepted - Setting to false");
@@ -652,8 +687,7 @@ Java.perform(function() {
                 };
                 console.log("[TALSEC] ✓ killOnBypass hooked");
             }
-            
-            // Hook build() to modify config
+
             if (Builder.build) {
                 Builder.build.implementation = function() {
                     console.log("[TALSEC] Config.build() intercepted - Creating safe config");
@@ -664,16 +698,16 @@ Java.perform(function() {
         } catch(e) {
             console.log("[TALSEC] TalsecConfig not found: " + e);
         }
-        
+
         // 6.13: Hook ScreenProtector
         try {
             var ScreenProtector = Java.use("com.aheaditec.talsec_security.security.api.ScreenProtector");
-            
+
             safeHook(ScreenProtector, "registerScreenCallbacks", [['android.app.Activity']], function(activity) {
                 console.log("[TALSEC] ScreenProtector.registerScreenCallbacks intercepted");
                 return;
             });
-            
+
             safeHook(ScreenProtector, "unregisterScreenCallbacks", [['android.app.Activity']], function(activity) {
                 console.log("[TALSEC] ScreenProtector.unregisterScreenCallbacks intercepted");
                 return;
@@ -682,28 +716,12 @@ Java.perform(function() {
         } catch(e) {
             console.log("[TALSEC] ScreenProtector not found: " + e);
         }
-        
-        // 6.14: Hook SuspiciousAppInfo (used in onMalwareDetected)
-        try {
-            var SuspiciousAppInfo = Java.use("com.aheaditec.talsec_security.security.api.SuspiciousAppInfo");
-            console.log("[TALSEC] Found SuspiciousAppInfo");
-            
-            // Return empty list for suspicious apps
-            if (SuspiciousAppInfo.$init) {
-                SuspiciousAppInfo.$init.implementation = function() {
-                    console.log("[TALSEC] SuspiciousAppInfo constructor intercepted");
-                    return this.$init();
-                };
-            }
-        } catch(e) {
-            console.log("[TALSEC] SuspiciousAppInfo not found: " + e);
-        }
-        
-        // 6.15: Hook Utils class (signature verification)
+
+        // 6.14: Hook Utils (signature verification)
         try {
             var Utils = Java.use("com.aheaditec.talsec_security.security.api.Utils");
             console.log("[TALSEC] Found Utils");
-            
+
             if (Utils.computeSigningCertificateHash) {
                 Utils.computeSigningCertificateHash.implementation = function(context) {
                     console.log("[TALSEC] computeSigningCertificateHash intercepted - Returning spoofed hash");
@@ -714,12 +732,100 @@ Java.perform(function() {
         } catch(e) {
             console.log("[TALSEC] Utils not found: " + e);
         }
-        
-        console.log("[ULTIMATE-BYPASS] ✓ Complete Talsec Demo App bypass active");
+
+        // ============================================================
+        // FreeRASP KMP specific hooks
+        // ============================================================
+        try {
+            var FreeraspKMP = Java.use("com.freeraspkmp.api.FreeraspKMP");
+            console.log("[KMP] Found FreeraspKMP");
+
+            if (FreeraspKMP.start) {
+                FreeraspKMP.start.implementation = function(config) {
+                    console.log("[KMP] FreeraspKMP.start() intercepted - Skipping Talsec initialization");
+                    return;
+                };
+                console.log("[KMP] ✓ FreeraspKMP.start hooked");
+            }
+
+            if (FreeraspKMP.emitEvent) {
+                FreeraspKMP.emitEvent.implementation = function(event) {
+                    console.log("[KMP] FreeraspKMP.emitEvent() intercepted - Blocking event: " + event);
+                    return;
+                };
+                console.log("[KMP] ✓ FreeraspKMP.emitEvent hooked");
+            }
+
+            try {
+                var ThreatHandler = Java.use("com.freeraspkmp.android.handlers.ThreatHandler");
+                console.log("[KMP] Found ThreatHandler");
+            } catch(e) {}
+        } catch(e) {
+            console.log("[KMP] FreeraspKMP not found (maybe not in use): " + e);
+        }
+
+        // ============================================================
+        // Flutter plugin (TalsecThreatHandler) hooks
+        // ============================================================
+        try {
+            var TalsecThreatHandler = Java.use("com.aheaditec.freerasp.handlers.TalsecThreatHandler");
+            console.log("[FLUTTER] Found TalsecThreatHandler");
+
+            var flutterMethods = [
+                "attachListener", "detachListener", "attachEventSink", 
+                "detachEventSink", "suspendListener", "resumeListener"
+            ];
+            flutterMethods.forEach(function(m) {
+                try {
+                    if (TalsecThreatHandler[m]) {
+                        TalsecThreatHandler[m].implementation = function() {
+                            console.log("[FLUTTER] " + m + " blocked");
+                            return;
+                        };
+                    }
+                } catch(e) {}
+            });
+            console.log("[FLUTTER] ✓ TalsecThreatHandler blocked");
+
+            try {
+                var PluginThreatHandler = Java.use("com.aheaditec.freerasp.handlers.PluginThreatHandler");
+                console.log("[FLUTTER] Found PluginThreatHandler");
+
+                var dispatcherField = PluginThreatHandler.class.getDeclaredField("threatDispatcher");
+                dispatcherField.setAccessible(true);
+                var dispatcher = dispatcherField.get(null);
+                if (dispatcher) {
+                    var ThreatDispatcher = Java.use("com.aheaditec.freerasp.dispatchers.ThreatDispatcher");
+                    if (ThreatDispatcher.send) {
+                        ThreatDispatcher.send.implementation = function(threat) {
+                            console.log("[FLUTTER] ThreatDispatcher.send blocked: " + threat);
+                            return;
+                        };
+                    }
+                    if (ThreatDispatcher.onPause) {
+                        ThreatDispatcher.onPause.implementation = function() { 
+                            console.log("[FLUTTER] ThreatDispatcher.onPause no-op"); 
+                        };
+                    }
+                    if (ThreatDispatcher.onResume) {
+                        ThreatDispatcher.onResume.implementation = function() { 
+                            console.log("[FLUTTER] ThreatDispatcher.onResume no-op"); 
+                        };
+                    }
+                    console.log("[FLUTTER] ✓ ThreatDispatcher blocked");
+                }
+            } catch(e) {
+                console.log("[FLUTTER] PluginThreatHandler not found: " + e);
+            }
+        } catch(e) {
+            console.log("[FLUTTER] TalsecThreatHandler not found (maybe not in use): " + e);
+        }
+
+        console.log("[ULTIMATE-BYPASS] ✓ Complete Talsec/freeRASP/KMP/Flutter bypass active");
     } catch(e) {
         console.log("[ERROR] Talsec hook failed: " + e);
     }
-    
+
     // ============================================================
     // PART 7: PAIRIP LICENSE CHECK BYPASS
     // ============================================================
@@ -748,19 +854,19 @@ Java.perform(function() {
                 } catch(e) {}
             });
         }, 50);
-        
+
         console.log("[ULTIMATE-BYPASS] ✓ PairIP license check bypass active");
     } catch(e) {
         console.log("[ERROR] PairIP hook failed: " + e);
     }
-    
+
     // ============================================================
     // PART 8: FIREBASE CRASHLYTICS BYPASS
     // ============================================================
     try {
         var CommonUtils = Java.use("com.google.firebase.crashlytics.internal.common.CommonUtils");
         console.log("[FIREBASE] Found CommonUtils");
-        
+
         safeHook(CommonUtils, "isRooted", [], function() {
             console.log("[FIREBASE] isRooted -> false");
             return false;
@@ -773,31 +879,31 @@ Java.perform(function() {
             console.log("[FIREBASE] isDebuggerAttached -> false");
             return false;
         });
-        
+
         try {
             CommonUtils.getDeviceModel.implementation = function() {
                 return "SM-G973F";
             };
         } catch(e) {}
-        
+
         try {
             CommonUtils.getDeviceId.implementation = function(context) {
                 return "000000000000000";
             };
         } catch(e) {}
-        
+
         console.log("[ULTIMATE-BYPASS] ✓ Firebase Crashlytics bypass active");
     } catch(e) {
         console.log("[FIREBASE] CommonUtils not found: " + e);
     }
-    
+
     // ============================================================
     // PART 9: SSL PINNING BYPASS
     // ============================================================
     try {
         var X509TrustManager = Java.use('javax.net.ssl.X509TrustManager');
         var SSLContext = Java.use('javax.net.ssl.SSLContext');
-        
+
         var TrustManager = Java.registerClass({
             name: 'dev.ultimate.TrustManager',
             implements: [X509TrustManager],
@@ -808,12 +914,12 @@ Java.perform(function() {
             }
         });
         var TrustManagers = [TrustManager.$new()];
-        
+
         safeHook(SSLContext, "init", [['[Ljavax.net.ssl.KeyManager;', '[Ljavax.net.ssl.TrustManager;', 'java.security.SecureRandom']], function(keyManager, trustManager, secureRandom) {
             console.log('[BYPASS-SSL] SSLContext.init bypassed');
             SSLContext.init.overload('[Ljavax.net.ssl.KeyManager;', '[Ljavax.net.ssl.TrustManager;', 'java.security.SecureRandom').call(this, keyManager, TrustManagers, secureRandom);
         });
-        
+
         try {
             var okhttp3 = Java.use('okhttp3.CertificatePinner');
             safeHook(okhttp3, "check", [['java.lang.String', 'java.util.List']], function(a, b) {
@@ -821,7 +927,7 @@ Java.perform(function() {
                 return;
             });
         } catch(e) {}
-        
+
         try {
             var WebViewClient = Java.use('android.webkit.WebViewClient');
             safeHook(WebViewClient, "onReceivedSslError", [['android.webkit.WebView', 'android.webkit.SslErrorHandler', 'android.net.http.SslError']], function(view, handler, error) {
@@ -829,27 +935,27 @@ Java.perform(function() {
                 handler.proceed();
             });
         } catch(e) {}
-        
+
         console.log("[ULTIMATE-BYPASS] ✓ SSL pinning bypass active");
     } catch(e) {
         console.log("[ERROR] SSL hook failed: " + e);
     }
-    
+
     // ============================================================
     // PART 10: PACKAGE MANAGER BYPASS
     // ============================================================
     try {
         var PackageManager = Java.use("android.app.ApplicationPackageManager");
-        
+
         var hiddenPackages = [
             "com.koushikdutta.superuser", "eu.chainfire.supersu",
             "com.topjohnwu.magisk", "com.scottyab.rootbeer",
             "com.stericson.roottools", "com.joeykrim.rootcheck",
             "com.kingroot.kinguser", "com.kingo.root",
             "com.framaroot", "com.oneclickroot.root",
-            "com.aheaditec.talsec.demoapp" // Also hide the demo app itself
+            "com.aheaditec.talsec.demoapp"
         ];
-        
+
         safeHook(PackageManager, "getPackageInfo", [['java.lang.String', 'int']], function(pkg, flags) {
             if (hiddenPackages.indexOf(pkg) !== -1) {
                 console.log("[BYPASS-PKG] Package hidden: " + pkg);
@@ -858,17 +964,17 @@ Java.perform(function() {
             }
             return this.getPackageInfo(pkg, flags);
         });
-        
+
         safeHook(PackageManager, "getInstallerPackageName", [['java.lang.String']], function(pkg) {
             console.log("[BYPASS-PKG] Installer check intercepted");
             return "com.android.vending";
         });
-        
+
         console.log("[ULTIMATE-BYPASS] ✓ Package manager bypass active");
     } catch(e) {
         console.log("[ERROR] Package manager hook failed: " + e);
     }
-    
+
     // ============================================================
     // PART 11: ROOT UTILITIES BYPASS
     // ============================================================
@@ -878,12 +984,12 @@ Java.perform(function() {
             'isEmulator', 'isEmulatorDetected', 'isVirtualDevice',
             'isDeviceCompromised', 'isJailbroken'
         ];
-        
+
         var DETECTION_CLASS_KEYWORDS = [
             'rootutil', 'rootutils', 'rootchecker', 'rootdetect',
             'securityutil', 'devicecheck'
         ];
-        
+
         function _nameMatches(name) {
             var low = name.toLowerCase();
             if (low.indexOf('java.') === 0 || low.indexOf('android.') === 0 ||
@@ -895,7 +1001,7 @@ Java.perform(function() {
             }
             return false;
         }
-        
+
         function _hookBoolFalse(jcls, className) {
             BOOL_FALSE_METHODS.forEach(function(m) {
                 try {
@@ -914,9 +1020,9 @@ Java.perform(function() {
                 } catch(e) {}
             });
         }
-        
+
         var _hooked = {};
-        
+
         try {
             var ClassLoader = Java.use('java.lang.ClassLoader');
             safeHook(ClassLoader, "loadClass", [['java.lang.String']], function(name) {
@@ -932,42 +1038,41 @@ Java.perform(function() {
             });
             console.log('[ROOT-UTILS] ClassLoader hook active');
         } catch(e) {}
-        
+
         console.log("[ULTIMATE-BYPASS] ✓ Root utilities bypass active");
     } catch(e) {
         console.log("[ERROR] Root utilities hook failed: " + e);
     }
-    
+
     // ============================================================
     // PART 12: GOOGLE PLAY SERVICES BYPASS
     // ============================================================
     try {
         var ProviderInstaller = Java.use("com.google.android.gms.security.ProviderInstaller");
-        
+
         safeHook(ProviderInstaller, "installIfNeeded", [['android.content.Context']], function(context) {
             console.log("[GMS] installIfNeeded - success");
             return;
         });
-        
+
         safeHook(ProviderInstaller, "installIfNeededAsync", [['android.content.Context', 'com.google.android.gms.security.ProviderInstaller$ProviderInstallListener']], function(context, listener) {
             console.log("[GMS] installIfNeededAsync - calling success");
             listener.onProviderInstalled();
             return;
         });
-        
+
         console.log("[ULTIMATE-BYPASS] ✓ Google Play Services bypass active");
     } catch(e) {
         console.log("[GMS] ProviderInstaller not found: " + e);
     }
-    
+
     // ============================================================
-    // PART 13: NATIVE FRIDA DETECTION BYPASS
+    // PART 13: NATIVE FRIDA DETECTION BYPASS (syscall-level)
     // ============================================================
     try {
-        var libc = Process.getModuleByName('libc.so');
-        var _FRIDA_NOISE = ['frida', 'gum-js-loop', 'linjector', 'gmain'];
-        var _mapsHandles = {};
-        
+        var _FRIDA_NOISE = ['frida', 'gum-js-loop', 'linjector', 'gmain', 'agent'];
+        var _mapsFds = {};
+
         function _scrubBuf(bufPtr, len) {
             try {
                 var raw = bufPtr.readByteArray(len);
@@ -986,10 +1091,54 @@ Java.perform(function() {
                 }
             } catch(e) {}
         }
-        
+
+        function _isSensitivePath(path) {
+            if (!path) return false;
+            var p = path.toLowerCase();
+            return p.indexOf('/proc/self/maps') !== -1 ||
+                   p.indexOf('/proc/net/tcp') !== -1 ||
+                   p.indexOf('/proc/net/udp') !== -1;
+        }
+
+        // Hook openat (syscall)
+        function _hookSyscall(sym) {
+            try {
+                var ptr = Module.getExportByName(null, sym);
+                if (!ptr) {
+                    console.log("[NATIVE] " + sym + " not found, skipping");
+                    return;
+                }
+                Interceptor.attach(ptr, {
+                    onEnter: function(args) {
+                        this._isSensitive = false;
+                        try {
+                            var path = args[1].readUtf8String(256) || '';
+                            if (_isSensitivePath(path)) {
+                                this._isSensitive = true;
+                            }
+                        } catch(e) {}
+                    },
+                    onLeave: function(retval) {
+                        if (this._isSensitive && retval.toInt32() >= 0) {
+                            _mapsFds[retval.toInt32().toString()] = true;
+                        }
+                    }
+                });
+                console.log("[NATIVE] Hooked " + sym);
+            } catch(e) {
+                console.log("[NATIVE] Failed to hook " + sym + ": " + e);
+            }
+        }
+
+        // Hook openat, open (fallback)
+        _hookSyscall('openat');
+        _hookSyscall('open');
+        _hookSyscall('open64');
+
+        // Hook fopen/fopen64
         ['fopen', 'fopen64'].forEach(function(sym) {
             try {
-                var p = libc.getExportByName(sym);
+                var p = Module.getExportByName(null, sym);
                 if (p) {
                     Interceptor.attach(p, {
                         onEnter: function(args) {
@@ -997,62 +1146,99 @@ Java.perform(function() {
                             try {
                                 if (args[0].isNull()) return;
                                 var path = args[0].readUtf8String(256) || '';
-                                this._isMaps = (path.indexOf('/proc/') !== -1 && path.indexOf('/maps') !== -1);
+                                if (_isSensitivePath(path)) {
+                                    this._isMaps = true;
+                                }
                             } catch(e) {}
                         },
                         onLeave: function(retval) {
-                            if (this._isMaps && !retval.isNull()) _mapsHandles[retval.toString()] = true;
+                            if (this._isMaps && !retval.isNull()) {
+                                _mapsFds[retval.toString()] = true;
+                            }
                         }
                     });
                 }
             } catch(e) {}
         });
-        
+
+        // Hook read
         try {
-            var fgetsPtr = libc.getExportByName('fgets');
+            var readPtr = Module.getExportByName(null, 'read');
+            if (readPtr) {
+                Interceptor.attach(readPtr, {
+                    onEnter: function(args) {
+                        this._fd = args[0].toInt32().toString();
+                        this._buf = args[1];
+                        this._count = args[2].toInt32();
+                    },
+                    onLeave: function(retval) {
+                        if (retval.toInt32() <= 0) return;
+                        if (!_mapsFds[this._fd]) return;
+                        try {
+                            _scrubBuf(this._buf, Math.min(this._count, retval.toInt32()));
+                        } catch(e) {}
+                    }
+                });
+                console.log("[NATIVE] Hooked read");
+            }
+        } catch(e) { console.log("[NATIVE] read hook failed: " + e); }
+
+        // Hook fgets
+        try {
+            var fgetsPtr = Module.getExportByName(null, 'fgets');
             if (fgetsPtr) {
                 Interceptor.attach(fgetsPtr, {
-                    onEnter: function(args) { this._buf = args[0]; this._fp = args[2].toString(); },
+                    onEnter: function(args) {
+                        this._buf = args[0];
+                        this._fp = args[2].toString();
+                    },
                     onLeave: function(retval) {
-                        if (retval.isNull() || !_mapsHandles[this._fp]) return;
+                        if (retval.isNull()) return;
+                        if (!_mapsFds[this._fp]) return;
                         try {
                             var s = this._buf.readCString() || '';
                             if (s.length > 0) _scrubBuf(this._buf, s.length);
                         } catch(e) {}
                     }
                 });
+                console.log("[NATIVE] Hooked fgets");
             }
-        } catch(e) {}
-        
+        } catch(e) { console.log("[NATIVE] fgets hook failed: " + e); }
+
+        // Hook connect (syscall)
         try {
-            var connectPtr = libc.getExportByName('connect');
+            var connectPtr = Module.getExportByName(null, 'connect');
             if (connectPtr) {
                 Interceptor.attach(connectPtr, {
                     onEnter: function(args) {
                         try {
                             if (args[2].toInt32() < 4) return;
                             var family = args[1].readU16();
-                            if (family !== 2) return;
+                            if (family !== 2) return; // AF_INET
                             var portBe = args[1].add(2).readU16();
                             var port = ((portBe & 0xFF) << 8) | ((portBe >> 8) & 0xFF);
-                            if (port === 27042 || port === 27043) args[1].add(2).writeU16(0x0100);
+                            if (port === 27042 || port === 27043 || port === 27044 || port === 27045) {
+                                console.log("[NATIVE] connect to port " + port + " -> 12345");
+                                args[1].add(2).writeU16(0x3930); // 12345 big-endian
+                            }
                         } catch(e) {}
                     }
                 });
+                console.log("[NATIVE] Hooked connect");
             }
-        } catch(e) {}
-        
+        } catch(e) { console.log("[NATIVE] connect hook failed: " + e); }
+
         console.log("[ULTIMATE-BYPASS] ✓ Native Frida detection bypass active");
     } catch(e) {
         console.log("[ERROR] Native hook failed: " + e);
     }
-    
+
     // ============================================================
     // PART 14: THREAD DETECTION BYPASS
     // ============================================================
     try {
         var Thread = Java.use('java.lang.Thread');
-        
+
         safeHook(Thread, "$init", [['java.lang.ThreadGroup', 'java.lang.Runnable', 'java.lang.String', 'long']], function(group, runnable, name, stackSize) {
             if (name) {
                 var hiddenNames = ["gmain", "gdbus", "gum-js", "pool-frida", "linjector", "frida", "gum"];
@@ -1066,20 +1252,19 @@ Java.perform(function() {
             }
             return this.$init(group, runnable, name, stackSize);
         });
-        
+
         console.log("[ULTIMATE-BYPASS] ✓ Thread detection bypass active");
     } catch(e) {
         console.log("[ERROR] Thread hook failed: " + e);
     }
-    
+
     // ============================================================
-    // PART 15: SELF-PROTECTION
+    // PART 15: SYSTEM PROPERTIES BYPASS
     // ============================================================
     try {
         var System = Java.use("java.lang.System");
-        
         safeHook(System, "getProperty", [['java.lang.String']], function(key) {
-            if (key && (key.indexOf("frida") !== -1 || key.indexOf("gum") !== -1 || 
+            if (key && (key.indexOf("frida") !== -1 || key.indexOf("gum") !== -1 ||
                         key.indexOf("agent") !== -1 || key.indexOf("linjector") !== -1 ||
                         key.indexOf("talsec") !== -1 || key.indexOf("rasp") !== -1)) {
                 console.log("[BYPASS-SELF] Property hidden: " + key);
@@ -1087,18 +1272,18 @@ Java.perform(function() {
             }
             return this.getProperty(key);
         });
-        
-        console.log("[ULTIMATE-BYPASS] ✓ Self-protection active");
+
+        console.log("[ULTIMATE-BYPASS] ✓ System properties bypass active");
     } catch(e) {
-        console.log("[ERROR] Self-protection hook failed: " + e);
+        console.log("[ERROR] System properties hook failed: " + e);
     }
-    
+
     // ============================================================
     // PART 16: HIDE MY APPLIST (HMA) BYPASS
     // ============================================================
     try {
         var PackageManager = Java.use("android.app.ApplicationPackageManager");
-        
+
         safeHook(PackageManager, "queryIntentContentProviders", [['android.content.Intent', 'int']], function(intent, flags) {
             console.log("[HMA] queryIntentContentProviders intercepted");
             var result = this.queryIntentContentProviders(intent, flags);
@@ -1122,12 +1307,12 @@ Java.perform(function() {
             }
             return filtered;
         });
-        
+
         console.log("[ULTIMATE-BYPASS] ✓ Hide My Applist bypass active");
     } catch(e) {
         console.log("[HMA] Hook error: " + e);
     }
-    
+
     // ============================================================
     // PART 17: VPN DETECTION BYPASS
     // ============================================================
@@ -1141,7 +1326,7 @@ Java.perform(function() {
     } catch(e) {
         console.log("[ERROR] VPN hook failed: " + e);
     }
-    
+
     // ============================================================
     // PART 18: SCREEN CAPTURE BYPASS
     // ============================================================
@@ -1155,7 +1340,7 @@ Java.perform(function() {
     } catch(e) {
         console.log("[ERROR] Screen capture hook failed: " + e);
     }
-    
+
     // ============================================================
     // PART 19: HOOKING DETECTION BYPASS
     // ============================================================
@@ -1166,7 +1351,7 @@ Java.perform(function() {
             "xposedDetected", "checkXposed", "isMagiskInstalled", "hasMagisk",
             "magiskDetected", "detectXposed", "detectFrida", "detectMagisk"
         ];
-        
+
         hookMethods.forEach(function(method) {
             try {
                 var Debug = Java.use("android.os.Debug");
@@ -1178,12 +1363,12 @@ Java.perform(function() {
                 }
             } catch(e) {}
         });
-        
+
         console.log("[ULTIMATE-BYPASS] ✓ Hooking detection bypass active");
     } catch(e) {
         console.log("[ERROR] Hooking hook failed: " + e);
     }
-    
+
     // ============================================================
     // COMPLETION
     // ============================================================
@@ -1191,7 +1376,7 @@ Java.perform(function() {
     console.log("[ULTIMATE-BYPASS] ========================================");
     console.log("[ULTIMATE-BYPASS] ✓ ALL BYPASSES LOADED SUCCESSFULLY!");
     console.log("[ULTIMATE-BYPASS] ========================================");
-    console.log("[ULTIMATE-BYPASS] Bypassed protections (Talsec Demo App):");
+    console.log("[ULTIMATE-BYPASS] Bypassed protections (Talsec/freeRASP/KMP/Flutter):");
     console.log("[ULTIMATE-BYPASS]   • Custom ServerSocket(27042) detection");
     console.log("[ULTIMATE-BYPASS]   • Socket port detection (27042-27050)");
     console.log("[ULTIMATE-BYPASS]   • V() method detection");
@@ -1227,16 +1412,22 @@ Java.perform(function() {
     console.log("[ULTIMATE-BYPASS]     - onADBEnabledDetected");
     console.log("[ULTIMATE-BYPASS]     - onSystemVPNDetected");
     console.log("[ULTIMATE-BYPASS]     - onAllChecksFinished");
+    console.log("[ULTIMATE-BYPASS]   • FreeRASP KMP: start() and emitEvent()");
+    console.log("[ULTIMATE-BYPASS]   • Flutter plugin: TalsecThreatHandler attach/detach");
+    console.log("[ULTIMATE-BYPASS]   • Flutter plugin: ThreatDispatcher events blocked");
     console.log("[ULTIMATE-BYPASS]   • PairIP license check");
     console.log("[ULTIMATE-BYPASS]   • Firebase Crashlytics");
     console.log("[ULTIMATE-BYPASS]   • Google Play Services");
-    console.log("[ULTIMATE-BYPASS]   • Native Frida detection (libc)");
+    console.log("[ULTIMATE-BYPASS]   • Native Frida detection (libc) - open/read/fgets/connect");
     console.log("[ULTIMATE-BYPASS]   • Thread detection");
     console.log("[ULTIMATE-BYPASS]   • System properties");
     console.log("[ULTIMATE-BYPASS]   • Hide My Applist");
     console.log("[ULTIMATE-BYPASS]   • ADB/USB debugging");
     console.log("[ULTIMATE-BYPASS]   • VPN detection");
     console.log("[ULTIMATE-BYPASS]   • Screen capture");
+    console.log("[ULTIMATE-BYPASS]   • System.exit / Process.killProcess (blocked)");
+    console.log("[ULTIMATE-BYPASS]   • Runtime.exit / Runtime.halt (blocked)");
+    console.log("[ULTIMATE-BYPASS]   • Activity.finish / finishAffinity (blocked)");
     console.log("[ULTIMATE-BYPASS] ========================================");
     console.log("[ULTIMATE-BYPASS] Script by: Ishan Oshada");
     console.log("[ULTIMATE-BYPASS] Website: https://ishanoshada.com");

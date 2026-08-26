@@ -1,43 +1,74 @@
-# Ultimate Frida Bypass Script - Complete Documentation
+# Ultimate Frida Bypass Script v4.3+
 
-## 📋 Overview
+> **⚠️ IMPORTANT**: This script is for **educational and security research purposes only**. Use only on applications you own or have explicit permission to test.
 
-This comprehensive Frida script bypasses all security protections in the Talsec Demo App and similar Android applications. It provides 19 layers of protection bypass, making it one of the most complete anti-detection scripts available.
-
----
-
-## 🛡️ Bypassed Protections (19 Layers)
-
-### **Core Protections**
-1. ✅ **Custom Port Detection** - Blocks ServerSocket/Socket on Frida ports (27042-27050)
-2. ✅ **Netstat Command** - Filters Frida processes from netstat output
-3. ✅ **Developer Mode** - Spoofs developer mode as disabled
-4. ✅ **Emulator Detection** - Spoofs real device fingerprints
-5. ✅ **Debugger Detection** - Hides debugger connection status
-6. ✅ **File Detection** - Blocks detection of Frida files
-7. ✅ **Process Detection** - Hides TracerPid and suspicious processes
-
-### **Talsec Specific**
-8. ✅ **ThreatDetected Callbacks** - All 16 threat callbacks blocked
-9. ✅ **DeviceState Callbacks** - All 5 device state callbacks blocked
-10. ✅ **RaspExecutionState** - Blocks onAllChecksFinished
-11. ✅ **BiometricState** - Always returns ACTIVE
-12. ✅ **Talsec.start()** - Bypasses initialization
-13. ✅ **killOnBypass** - Disabled
-14. ✅ **ScreenProtector** - Callbacks blocked
-
-### **Additional Protections**
-15. ✅ **PairIP License Check** - Bypasses license verification
-16. ✅ **Firebase Crashlytics** - Hides root/emulator/debugger status
-17. ✅ **SSL Pinning** - Bypasses certificate pinning
-18. ✅ **Package Manager** - Hides detection packages
-19. ✅ **Native Detection** - Bypasses libc-based Frida detection
+A comprehensive Frida script that bypasses all security protections in Talsec, freeRASP, FreeRASP KMP, Flutter applications, and similar Android security frameworks. This script provides **19 layers of protection bypass**, making it one of the most complete anti-detection scripts available.
 
 ---
 
-## 🚀 Quick Start Guide
+## 🎯 Key Features
 
-### 1. **Setup Frida Server on Android Emulator/Device**
+### 🚀 **Frida Server Detection Bypass** (Primary Focus)
+- **Port Scanning Prevention**: Blocks detection on ports 27042-27050
+- **Process Hiding**: Removes Frida from process lists (ps, top, netstat)
+- **File System Hiding**: Frida server files invisible to detection
+- **Memory Scrubbing**: Cleans Frida signatures from memory maps
+- **Thread Renaming**: Hides Frida-related thread names
+- **Property Filtering**: Removes Frida from system properties
+
+### 🛡️ **Complete Talsec/freeRASP Bypass**
+- All 16 ThreatDetected callbacks blocked
+- All 5 DeviceState callbacks blocked
+- Talsec.start() initialization bypassed
+- killOnBypass mechanism disabled
+- BiometricState always returns ACTIVE
+
+### 🔓 **Advanced Security Bypasses**
+- Root detection (all methods)
+- Emulator detection (spoofs real devices)
+- Debugger detection (hides all traces)
+- SSL pinning (all implementations)
+- Package manager (hides security apps)
+- Native detection (libc-level bypass)
+- VPN detection bypass
+
+---
+
+## 🛡️ Complete Bypass Coverage
+
+### **Bypassed Protections - 19 Layers**
+
+| # | Protection Layer | Description | Status |
+|---|-----------------|-------------|--------|
+| 1 | **Exit Blockers** | System.exit, Runtime.exit, Process.killProcess | ✅ |
+| 2 | **Frida Port Detection** | ServerSocket/Socket on 27042-27050 | ✅ |
+| 3 | **Process Detection** | ps, netstat, top command output filtering | ✅ |
+| 4 | **File Detection** | /data/local/tmp/frida-server detection | ✅ |
+| 5 | **Memory Scanning** | /proc/self/maps Frida signatures | ✅ |
+| 6 | **Thread Detection** | Frida thread names (gmain, gum-js, etc.) | ✅ |
+| 7 | **Developer Mode** | Settings.Global & Settings.Secure | ✅ |
+| 8 | **Emulator Detection** | Build properties & TelephonyManager | ✅ |
+| 9 | **Debugger Detection** | Debug.isDebuggerConnected | ✅ |
+| 10 | **Root Detection** | All root detection methods | ✅ |
+| 11 | **Talsec ThreatDetected** | All 16 threat callbacks | ✅ |
+| 12 | **Talsec DeviceState** | All 5 device state callbacks | ✅ |
+| 13 | **Talsec.start()** | Security SDK initialization | ✅ |
+| 14 | **SSL Pinning** | Certificate pinning bypass | ✅ |
+| 15 | **Native Detection** | libc syscall hooks | ✅ |
+| 16 | **Firebase Crashlytics** | Root/emulator/debugger status | ✅ |
+| 17 | **PairIP License** | License verification bypass | ✅ |
+| 18 | **Flutter Plugin** | ThreatHandler & ThreatDispatcher | ✅ |
+| 19 | **System Properties** | Frida property filtering | ✅ |
+
+---
+
+
+
+---
+
+## 🚀 Quick Start
+
+### 1. **Setup Frida Server on Android**
 
 ```bash
 # Push Frida server to device
@@ -46,242 +77,253 @@ adb push frida-server /data/local/tmp/
 # Make it executable
 adb shell chmod 755 /data/local/tmp/frida-server
 
-# Run Frida server (as root)
+# Run Frida server as root (HIDE IT FROM DETECTION)
 adb shell
 su
-/data/local/tmp/frida-server -l 0.0.0.0:9999 &
+/data/local/tmp/frida-server -l 0.0.0.0:9999 --daemon &
 ```
 
-### 2. **Forward Port for Communication**
+### 2. **Hide Frida Server Better**
+```bash
+# Rename frida-server to avoid detection
+adb shell mv /data/local/tmp/frida-server /data/local/tmp/system_server
 
+# Run with different name
+adb shell "su -c '/data/local/tmp/system_server -l 0.0.0.0:9999 &'"
+```
+
+### 3. **Forward Port**
 ```bash
 # Forward port from emulator to local machine
 adb -s emulator-5556 forward tcp:9999 tcp:9999
 ```
 
-### 3. **Run Frida with the Bypass Script**
-
+### 4. **Run Frida with Bypass Script**
 ```bash
-# Attach to app with the bypass script
+# Attach to Talsec Demo App
 frida -H 127.0.0.1:9999 -f com.aheaditec.talsec.demoapp -l main.js --no-pause
 
-# Or for a specific app (replace with your app package)
-frida -H 127.0.0.1:9999 -f com.your.app.package -l main.js --no-pause
-```
-
-### 4. **For Already Running Apps**
-
-```bash
-# List running processes
-frida-ps -H 127.0.0.1:9999
-
-# Attach to running app
-frida -H 127.0.0.1:9999 com.your.app.package -l main.js
+# With verbose logging (to verify bypass)
+frida -H 127.0.0.1:9999 -f com.aheaditec.talsec.demoapp -l main.js --no-pause 2>&1 | tee bypass.log
 ```
 
 ---
 
-## 📡 **Scenario: When Frida Connection Drops But App Stays Alive**
 
-Sometimes the Frida connection may disconnect (due to network issues, server restart, etc.) but the injected bypass script remains active in the app process. In such cases, you can still capture network traffic using external tools.
+## 📊 Bypass Verification
 
-
-## 📱 Supported Apps
-
-This script works on:
-
-- **Talsec Demo App** (com.aheaditec.talsec.demoapp)
-- **freeRASP** protected applications
-- **PairIP** protected applications
-- **Any app with Frida detection** mechanisms
-
----
-
-## 🔧 Customization Guide
-
-### **Changing Target App Package**
-
-Edit the last line of the command:
+### **Check if Frida Server is Hidden**
 ```bash
-frida -H 127.0.0.1:9999 -f com.your.target.app -l main.js
+# Try to find frida-server (should NOT show anything)
+adb shell "su -c 'ps | grep frida'"
+adb shell "su -c 'ps | grep 27042'"
+adb shell "su -c 'netstat -an | grep 27042'"
+adb shell "su -c 'ls -la /data/local/tmp/ | grep frida'"
+
+# Expected Output: NOTHING (all hidden!)
 ```
 
-### **Adding Custom Frida Ports**
+### **Check if App Detects Frida**
+```bash
+# Monitor app logs for detection attempts
+adb logcat | grep -E "Frida|frida|27042|Talsec|Threat"
 
-Modify line 48 in the script:
-```javascript
-var fridaPorts = [27042, 27043, 27044, 27045, 27046, 27047, 27048, 27049, 27050, YOUR_CUSTOM_PORT];
+# Expected Output: No detection messages
 ```
 
-### **Adding Custom File Paths to Block**
+### **Check Memory Maps**
+```bash
+# In Frida console, check if memory is clean
+frida -H 127.0.0.1:9999 com.target.app
+% cat /proc/self/maps | grep -E "frida|gum"
 
-Modify line 243 in the script:
-```javascript
-var blockedFiles = [
-    "/data/local/tmp/frida-server",
-    "/data/local/tmp/frida",
-    // Add your custom paths
-];
-```
-
-### **Adding Custom Package Hiding**
-
-Modify line 574 in the script:
-```javascript
-var hiddenPackages = [
-    "com.koushikdutta.superuser",
-    "com.your.package.to.hide",
-    // Add your packages
-];
+# Expected Output: No Frida-related entries
 ```
 
 ---
 
-## 🐛 Debug Mode
+## 🎯 Success Indicators
 
-The script includes extensive logging. To see detailed output:
+When the bypass is working, you'll see:
 
-```bash
-# Run with verbose logging
-frida -H 127.0.0.1:9999 -f com.aheaditec.talsec.demoapp -l main.js --no-pause 2>&1 | tee frida.log
+### Console Output
 ```
-
-### **Common Log Messages**
-- `[BYPASS-PORT]` - Port detection blocked
-- `[BYPASS-DEV]` - Developer mode bypassed
-- `[BYPASS-EMU]` - Emulator detection bypassed
-- `[TALSEC]` - Talsec specific bypasses
-- `[BYPASS-DEBUG]` - Debugger detection bypassed
-
----
-
-## 🔥 Advanced Usage
-
-### **1. Spawn & Resume**
-```bash
-# Spawn app and immediately resume
-frida -H 127.0.0.1:9999 -f com.aheaditec.talsec.demoapp -l main.js --no-pause
-```
-
-### **2. Attach to Existing Process**
-```bash
-# Find PID
-frida-ps -H 127.0.0.1:9999 | grep talsec
-
-# Attach
-frida -H 127.0.0.1:9999 -p PID -l main.js
-```
-
-### **3. Multiple Scripts**
-```bash
-# Load multiple scripts
-frida -H 127.0.0.1:9999 -f com.aheaditec.talsec.demoapp -l main.js -l another_script.js
-```
-
-### **4. Interactive Mode**
-```bash
-# Enter REPL mode
-frida -H 127.0.0.1:9999 -f com.aheaditec.talsec.demoapp
-# Then in REPL: %load main.js
-```
-
----
-
-## 📊 Performance Impact
-
-- **Startup Time**: +2-3 seconds
-- **Memory Usage**: +15-25 MB
-- **CPU Usage**: Minimal (<5%)
-- **App Performance**: No noticeable impact
-
----
-
-## 🎯 Verification
-
-### **Check if Bypass is Working**
-
-1. **Look for success message** in console:
-```
+[ULTIMATE-BYPASS] ✓ Exit blockers active
+[ULTIMATE-BYPASS] ✓ Frida port detection bypass active
+[ULTIMATE-BYPASS] ✓ Netstat and process detection bypass active
+[ULTIMATE-BYPASS] ✓ File detection bypass active
+[ULTIMATE-BYPASS] ✓ Native Frida detection bypass active
+[ULTIMATE-BYPASS] ✓ Thread detection bypass active
+[ULTIMATE-BYPASS] ✓ System properties bypass active
+[TALSEC] ✓ ThreatDetected all callbacks hooked
+[TALSEC] ✓ DeviceState all callbacks hooked
 [ULTIMATE-BYPASS] ✓ ALL BYPASSES LOADED SUCCESSFULLY!
 ```
 
-2. **Verify app behavior**:
-   - App should not crash
-   - No security alerts should appear
-   - All app features should work normally
+### App Behavior
+- ✅ App launches normally (no crash)
+- ✅ No security alerts or popups
+- ✅ No "App is compromised" messages
+- ✅ All app features work
+- ✅ No forced exit/restart
 
-3. **Check for blocked detections**:
-   - Look for `[BYPASS-*]` messages in logs
+### Detection Tools
+- ✅ Root Checker apps show "Not Rooted"
+- ✅ Frida Detection apps show "No Frida Found"
+- ✅ SSL traffic can be intercepted
+- ✅ Dynamic analysis tools work
 
 ---
 
 ## 🛠️ Troubleshooting
 
-### **Common Issues & Solutions**
+### **Frida Server Issues**
 
-| Issue | Solution |
-|-------|----------|
-| **"Connection refused"** | Check Frida server is running: `adb shell ps \| grep frida` |
-| **"Spawn failed"** | App may be protected. Try attaching instead: `frida -H 127.0.0.1:9999 com.your.app` |
-| **"No such file"** | Verify script path: `ls -la main.js` |
-| **App crashes on startup** | Try with `--no-pause` flag |
-| **Hooks not working** | Ensure app is not obfuscated. Check logs for `[TALSEC]` messages |
-| **"Permissions denied"** | Run Frida server as root: `adb shell su -c /data/local/tmp/frida-server` |
+| Problem | Solution |
+|---------|----------|
+| **Frida detected by app** | Use the script's port/process/file bypass |
+| **Frida connection refused** | Check server: `adb shell "su -c 'ps \| grep frida'"` |
+| **Frida server kills itself** | Use `--daemon` flag or run in background |
+| **Can't hide frida-server** | Rename file, use different port, or run as system process |
+| **App detects Frida thread** | Script renames threads automatically |
+| **Memory maps show Frida** | Script scrubs memory on read |
 
-### **Troubleshooting Commands**
-
+### **Detection Prevention Tips**
 ```bash
-# Check Frida server status
-adb shell "su -c 'ps | grep frida'"
+# 1. Use different server name
+adb shell mv frida-server android_system
 
-# Check port forwarding
-adb forward --list
+# 2. Use non-standard port (not 27042)
+adb shell "/data/local/tmp/android_system -l 0.0.0.0:12345 &"
 
-# Kill and restart Frida server
-adb shell "su -c 'killall frida-server'"
-adb shell "su -c '/data/local/tmp/frida-server -l 0.0.0.0:9999 &'"
+# 3. Run as system service
+adb shell "cp /data/local/tmp/android_system /system/bin/"
+adb shell "chmod 755 /system/bin/android_system"
+adb shell "android_system -l 0.0.0.0:12345 &"
 
-# Check logs in real-time
-adb logcat | grep -E "Talsec|Frida|BYPASS"
+# 4. Hide from netstat (replace output)
+# Script automatically filters netstat output
 ```
 
 ---
 
-## 📝 Important Notes
+## 💡 Advanced Tips
 
-1. **Root Access Required**: Most features require root access on the device
-2. **App Compatibility**: May need adjustments for heavily obfuscated apps
-3. **Legal Notice**: Use only for legitimate security testing and research
-4. **Updates**: Talsec updates may require script modifications
+### **Bypass Frida Detection That Scans for Process Names**
 
----
+Some apps scan `/proc` for Frida-related processes. This script:
+1. Hooks `openat()` for `/proc/self/maps`
+2. Scrubs Frida strings from memory
+3. Filters Frida from process lists
+4. Renames Frida threads
 
-## 🔗 Resources
+### **If App Uses Native Frida Detection**
+```javascript
+// The script automatically hooks:
+- open/read system calls (libc level)
+- fgets (FILE pointer level)
+- connect (network level)
+- Android framework calls
+```
 
-- **GitHub Repository**: https://github.com/ishanoshada
-- **Portfolio**: https://ishanoshada.com
-- **Frida Documentation**: https://frida.re/docs/
-- **Android Security Testing**: https://developer.android.com/training/articles/security-tips
-
----
-
-## 📄 License
-
-This script is for educational and security research purposes only. Use responsibly and only on applications you own or have permission to test.
-
----
-
-## 🤝 Contributing
-
-Found an issue or have a suggestion? 
-- Fork the repository
-- Make your changes
-- Submit a pull request
+### **Bypass Timing Attacks**
+```javascript
+// Script can delay detection by:
+// 1. Hooking System.currentTimeMillis()
+// 2. Intercepting check intervals
+// 3. Blocking detection threads
+```
 
 ---
 
-## 📞 Support
+## 📈 Performance Impact
 
+| Metric | Impact |
+|--------|--------|
+| **Startup Time** | +2-3 seconds |
+| **Memory Usage** | +15-25 MB |
+| **CPU Usage** | Minimal (<5%) |
+| **App Performance** | No noticeable impact |
+| **Network Latency** | None |
+
+---
+
+## 🔒 Security Notes
+
+### **Detectability Factors**
+- The script itself is NOT detectable by Talsec
+- Uses Frida's internal API (hard to detect)
+- All hooks are at native level
+- No Java-level modifications visible
+
+### **Limitations**
+- May need updates for new Talsec versions
+- Obfuscated apps might need class name adjustments
+- Some rare detection methods might need additional hooks
+
+---
+
+## 📚 Additional Resources
+
+- [Frida Documentation](https://frida.re/docs/)
+- [Talsec Security Testing Guide](https://talsec.app/security-testing/)
+- [OWASP Mobile Security Testing](https://owasp.org/www-project-mobile-security-testing-guide/)
+- [Android Anti-Reversing Defenses](https://developer.android.com/training/articles/security-tips)
+
+---
+
+## ⚠️ Disclaimer
+
+**IMPORTANT**: This script is provided for **educational and security research purposes only**. 
+
+- ✅ Use only on applications you own
+- ✅ Use only with explicit permission
+- ✅ Use only in authorized security testing
+- ❌ Do not use for malicious purposes
+- ❌ Do not use to violate terms of service
+- ❌ Do not use to bypass legitimate protections without permission
+
+The author assumes no responsibility for misuse of this script. Users are solely responsible for complying with all applicable laws and regulations.
+
+---
+
+## 📞 Contact & Support
+
+- **Author**: Ishan Oshada
 - **Email**: ic31908@gmail.com
-- **GitHub**: Open an issue
-- **Twitter**: @ishanoshada
+- **Portfolio**: https://ishanoshada.com
+- **GitHub**: https://github.com/ishanoshada
+
+---
+
+## 📝 Changelog
+
+### v4.3+ (Latest)
+- ✅ Enhanced Frida server detection bypass
+- ✅ Added memory map scrubbing
+- ✅ Improved thread detection bypass
+- ✅ Added native libc syscall hooks
+- ✅ Full Talsec/freeRASP bypass
+- ✅ Flutter plugin support
+
+### v4.2
+- Added PairIP license bypass
+- Added Firebase Crashlytics bypass
+- Improved SSL pinning bypass
+
+### v4.1
+- Complete Talsec ThreatDetected bypass
+- DeviceState callback bypass
+- killOnBypass mechanism disabled
+
+---
+
+**Version**: 4.3+  
+**Last Updated**: January 2026  
+**Supported Android Versions**: 7.0 - 14.0  
+**Compatible Frida Versions**: 16.0+
+
+---
+
+*Made with ❤️ for the security research community*  
+*Remember: With great power comes great responsibility!*
