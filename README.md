@@ -294,36 +294,6 @@ The author assumes no responsibility for misuse of this script. Users are solely
 - **Portfolio**: https://ishanoshada.com
 - **GitHub**: https://github.com/ishanoshada
 
----
-
-## 📝 Changelog
-
-### v4.3+ (Latest)
-- ✅ Enhanced Frida server detection bypass
-- ✅ Added memory map scrubbing
-- ✅ Improved thread detection bypass
-- ✅ Added native libc syscall hooks
-- ✅ Full Talsec/freeRASP bypass
-- ✅ Flutter plugin support
-
-### v4.2
-- Added PairIP license bypass
-- Added Firebase Crashlytics bypass
-- Improved SSL pinning bypass
-
-### v4.1
-- Complete Talsec ThreatDetected bypass
-- DeviceState callback bypass
-- killOnBypass mechanism disabled
-
----
-
-**Version**: 4.3+  
-**Last Updated**: January 2026  
-**Supported Android Versions**: 7.0 - 14.0  
-**Compatible Frida Versions**: 16.0+
-
----
 
 *Made with ❤️ for the security research community*  
 *Remember: With great power comes great responsibility!*
